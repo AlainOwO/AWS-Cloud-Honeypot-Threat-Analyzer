@@ -33,3 +33,4 @@ I developed a custom Python script (`analyze_threats.py`) to parse the structure
 * Gained hands-on experience configuring AWS network boundaries and security groups.
 * Deepened understanding of Linux user privileges, daemon processes, and `iptables` routing.
 * Successfully automated the parsing of complex JSON security logs using Python.
+* 
