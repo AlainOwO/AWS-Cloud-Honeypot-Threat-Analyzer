@@ -1,5 +1,8 @@
 # AWS Cloud Honeypot & Threat Intelligence Tracker
 
+## ⚠️ Status
+This honeypot was deployed and actively ran on a student AWS account, capturing 1,000+ malicious requests over its runtime. That account has since been closed by the university (standard student-account lifecycle), so the original live logs are no longer retrievable. The analysis and AI-classification scripts below are fully functional and verified against bundled sample sessions (`--demo` mode) — re-deploying on a fresh AWS/Oracle Cloud instance would immediately regenerate real data using the same pipeline.
+
 ## 📌 Project Overview
 This project involves the deployment of a customized, interactive SSH honeypot (Cowrie) within an isolated AWS Virtual Private Cloud (VPC). The objective was to attract, log, and analyze real-world brute-force attacks and malware delivery attempts from automated botnets on the public internet.
 
