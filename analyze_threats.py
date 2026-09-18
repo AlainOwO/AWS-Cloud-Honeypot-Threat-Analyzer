@@ -1,33 +1,45 @@
 import json
+import glob
+import argparse
 from collections import Counter
 
-# Path to the Cowrie JSON log
-log_file = "var/log/cowrie/cowrie.json"
+def analyze(log_pattern: str):
+    ips = []
+    credentials = []
 
-ips = []
-credentials = []
+    log_files = sorted(glob.glob(log_pattern))
 
-print("Analyzing honeypot logs...\n")
+    if not log_files:
+        print(f"Error: No log files matched pattern: {log_pattern}")
+        print("Check the path -- e.g. ~/cowrie/var/log/cowrie/cowrie.json*")
+        return
 
-try:
-    with open(log_file, "r") as f:
-        for line in f:
-            try:
-                data = json.loads(line.strip())
+    print(f"Analyzing {len(log_files)} log file(s): {', '.join(log_files)}\n")
 
-                # Track every time an IP connects
-                if data.get("eventid") == "cowrie.session.connect":
-                    ips.append(data.get("src_ip"))
+    for log_file in log_files:
+        try:
+            with open(log_file, "r") as f:
+                for line in f:
+                    try:
+                        data = json.loads(line.strip())
 
-                # Track usernames and passwords from login attempts
-                if data.get("eventid") in ["cowrie.login.failed", "cowrie.login.success"]:
-                    user = data.get("username", "UNKNOWN")
-                    pw = data.get("password", "UNKNOWN")
-                    credentials.append(f"{user}:{pw}")
+                        # Track every time an IP connects
+                        if data.get("eventid") == "cowrie.session.connect":
+                            ips.append(data.get("src_ip"))
 
-            except json.JSONDecodeError:
-                # Skip any corrupted lines
-                continue
+                        # Track usernames and passwords from login attempts
+                        if data.get("eventid") in ["cowrie.login.failed", "cowrie.login.success"]:
+                            user = data.get("username", "UNKNOWN")
+                            pw = data.get("password", "UNKNOWN")
+                            credentials.append(f"{user}:{pw}")
+
+                    except json.JSONDecodeError:
+                        # Skip any corrupted lines
+                        continue
+
+        except FileNotFoundError:
+            print(f"Warning: Could not open {log_file}, skipping.")
+            continue
 
     # Calculate the top 10 most common items
     top_ips = Counter(ips).most_common(10)
@@ -42,6 +54,21 @@ try:
     for cred, count in top_creds:
         print(f"{cred}: {count} attempts")
 
-except FileNotFoundError:
-    print(f"Error: Could not find the log file at {log_file}")
-    print("Make sure you are running this from the ~/cowrie directory.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Summarize Cowrie honeypot logs (IPs + credentials).")
+    parser.add_argument(
+        "--log-pattern",
+        default="~/cowrie/var/log/cowrie/cowrie.json*",
+        help=(
+            "Glob pattern matching Cowrie JSON log(s). Defaults to the standard "
+            "Cowrie install path, including rotated daily logs (cowrie.json.YYYY-MM-DD). "
+            "Adjust if your install path differs."
+        ),
+    )
+    args = parser.parse_args()
+
+    # Expand ~ to home directory
+    import os
+    pattern = os.path.expanduser(args.log_pattern)
+    analyze(pattern)
